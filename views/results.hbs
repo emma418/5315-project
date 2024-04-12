@@ -1,0 +1,38 @@
+{{> form }}
+
+{{#if restaurants}}
+    <h2 class="mt-4">Restaurants in {{request.borough}} - Page {{request.page}}</h2>
+    <table class="table table-striped mt-3">
+        <thead>
+            <tr>
+                <th>Restaurant ID</th>
+                <th>Name</th>
+                <th>Cuisine</th>
+                <th>Borough</th>
+                <th>Address</th>
+                <th>Grades</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{#each restaurants}}
+            <tr>
+                <td>{{this.restaurant_id}}</td>
+                <td>{{this.name}}</td>
+                <td>{{this.cuisine}}</td>
+                <td>{{this.borough}}</td>
+                <td>{{this.address.building}} {{this.address.street}}, {{this.address.zipcode}}</td>
+                <td>
+                    <ul>
+                    {{#each this.grades}}
+                        <li>{{grade}} (Score: {{score}})</li>
+                    {{/each}}
+                    </ul>
+                </td>
+            </tr>
+            {{/each}}
+        </tbody>
+    </table>
+    {{else}}
+    <p class="alert alert-danger mt-3">{{error}}</p>
+    {{/if}}
+</div>

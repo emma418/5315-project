@@ -1,0 +1,18 @@
+<div class="mt-4 mb-3">
+    <h1>Search Restaurants</h1>
+    <form action="/restaurants" method="POST" class="form">
+        <div class="form-group">
+            <label for="page">Page:</label>
+            <input type="number" class="form-control" id="page" name="page" required>
+        </div>
+        <div class="form-group">
+            <label for="perPage">Restaurants per Page:</label>
+            <input type="number" class="form-control" id="perPage" name="perPage" required>
+        </div>
+        <div class="form-group">
+            <label for="borough">Borough:</label>
+            <input type="text" class="form-control" id="borough" name="borough">
+        </div>
+        <button type="submit" class="btn btn-primary">Submit</button>
+    </form>
+</div>
