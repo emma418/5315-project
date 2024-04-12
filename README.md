@@ -1,3 +1,3 @@
 # 5135-Project
 
-commit 1
+End-as-semester project
