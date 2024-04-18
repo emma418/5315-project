@@ -22,6 +22,24 @@ app.use(bodyParser.json({ type: "application/vnd.api+json" })); // parse applica
 
 const { query, body, validationResult } = require('express-validator');
 
+//modules to apply authentication
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const cookieParser = require('cookie-parser');
+
+const admin = {
+  username: "admin",
+  password: process.env.PASSWORD
+}
+
+// create GraphQL as a new function
+const {ApolloServer} = require('apollo-server-express');
+const typeDefs = require('./gql-schema');
+const resolvers = require('./gql-resolvers');
+
+const server = new ApolloServer({ typeDefs, resolvers });
+
+
 app.engine('.hbs', engine({
     extname: '.hbs',
     //specify the folder partials are located
@@ -31,8 +49,38 @@ app.set('view engine', '.hbs');
 
 // allow forms
 app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
+
+// middleware to check if the user is authenticated
+const verifyToken = (req, res, next) => {
+  const token = req.cookies.token;
+  
+  if(!token) return res.status(401).json({message: "Please login"});
+
+  jwt.verify(token, process.env.SECRETKEY, (err, decoded) => {
+    if (err) return res.status(403).json({message: "Invalid credential, failed to login"})
+
+    req.user = decoded;
+    next();
+  });
+}
+
+app.post("/login", async (req, res) => {
+    const {username, password} = req.body;
+    // check the user's input
+    if(username !== admin.username || !(await bcrypt.compare(password, admin.password))) {
+      return res.status(401).json({message: "Invalid username or password"});
+    }
+
+    const accessToken = jwt.sign({ username: username }, process.env.SECRETKEY, {expiresIn: '1h'});
+    res.cookie('token', accessToken);
+    res.json({message: "Logged in successfully"});
+})
+
+
+
 // add a new restaurant document into the collection
-app.post("/api/restaurants", async (req, res) => {
+app.post("/api/restaurants", verifyToken, async (req, res) => {
     try {  
       // get and return all the employees after newly created employe record
       const restaurant = await db.addNewRestaurant(req.body);
@@ -140,7 +188,7 @@ app.get("/api/restaurants/:restaurant_id", async (req, res) => {
 });
 
 // update a restaurant by id
-app.put("/api/restaurants/:restaurant_id", async (req, res) => {
+app.put("/api/restaurants/:restaurant_id", verifyToken, async (req, res) => {
     const id = req.params.restaurant_id;
     if (!mongoose.Types.ObjectId.isValid(id)) {
         return res.status(400).json({
@@ -170,7 +218,7 @@ app.put("/api/restaurants/:restaurant_id", async (req, res) => {
 });
 
 // delete a restaurant by id
-app.delete("/api/restaurants/:restaurant_id", async (req, res) => {
+app.delete("/api/restaurants/:restaurant_id", verifyToken, async (req, res) => {
     const id = req.params.restaurant_id;
     if (!mongoose.Types.ObjectId.isValid(id)) {
         return res.status(400).json({
@@ -189,10 +237,30 @@ app.delete("/api/restaurants/:restaurant_id", async (req, res) => {
   }
 });
 
+
+
+// Initialize the database
 db.initialize().then(() => {
-    app.listen(port, () => {
-        console.log(`${appConfig.name} listening on port: ${port}`);
+  // Start the Apollo Server
+  server.start().then(() => {
+      // Apply Apollo middleware to the Express application
+      server.applyMiddleware({ app, path: '/graphql' });
+
+      // Start the Express server
+      app.listen(port, () => {
+          console.log(`${appConfig.name} listening on http://localhost:${port}${server.graphqlPath}`);
       });
+  }).catch(error => {
+      console.error('Failed to start Apollo Server:', error);
+  });
 }).catch(error => {
-    console.error('Failed to start the server: ', error);
-})
+  console.error('Failed to initialize the database:', error);
+});
+
+// db.initialize().then(() => {
+//     app.listen(port, () => {
+//         console.log(`${appConfig.name} listening on port: http://localhost:${port}${server.graphqlPath}`);
+//       });
+// }).catch(error => {
+//     console.error('Failed to start the server: ', error);
+// })
