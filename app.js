@@ -40,6 +40,8 @@ const resolvers = require('./gql-resolvers');
 const server = new ApolloServer({ typeDefs, resolvers });
 
 
+
+
 app.engine('.hbs', engine({
     extname: '.hbs',
     //specify the folder partials are located
@@ -64,6 +66,9 @@ const verifyToken = (req, res, next) => {
     next();
   });
 }
+app.get('/', (req, res) => {
+  res.send("This is Emma's project");
+});
 
 app.post("/login", async (req, res) => {
     const {username, password} = req.body;
