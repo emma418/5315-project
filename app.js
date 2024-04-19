@@ -44,6 +44,8 @@ const server = new ApolloServer({ typeDefs, resolvers });
 
 app.engine('.hbs', engine({
     extname: '.hbs',
+    defaultLayout: 'main',
+    layoutsDir: path.join(app.get('views'), 'layouts'),
     //specify the folder partials are located
   partialsDir: path.join(__dirname, 'views', 'partials')
   }));
